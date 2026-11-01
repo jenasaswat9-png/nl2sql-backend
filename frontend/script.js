@@ -10,7 +10,7 @@
 (() => {
   "use strict";
 
-  const API_BASE = "[https://nl2sql-engine-api-hag9dsaed8g7hphw.centralindia-01.azurewebsites.net](https://nl2sql-engine-api-hag9dsaed8g7hphw.centralindia-01.azurewebsites.net)";
+  const API_BASE = "https://nl2sql-engine-api-hag9dsaed8g7hphw.centralindia-01.azurewebsites.net";
   const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
   const ALLOWED_EXTENSIONS = [".db", ".sqlite", ".sqlite3"];
   const SECURITY_PREFIX = "SECURITY_BLOCK:";
