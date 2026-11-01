@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Text-to-SQL | Autonomous Intelligence</title>
+    <!-- Tailwind via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base dark theme ensuring the z-index: -1 particle canvas is visible */
+        body { background-color: #030712; }
+        
+        /* Elevated Glassmorphism utilities */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-panel-elevated {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        /* Subtle radial ambient glows behind primary areas */
+        .ambient-glow {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(147, 51, 234, 0.05) 50%, transparent 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Custom scrollbar for output containers */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+    </style>
+</head>
+<body class="text-slate-300 min-h-screen font-sans selection:bg-cyan-500/30 overflow-x-hidden relative">
+
+    <!-- Ambient background glows -->
+    <div class="ambient-glow top-0 left-1/2 -translate-x-1/2"></div>
+    <div class="ambient-glow top-96 left-1/4"></div>
+
+    <main class="max-w-5xl mx-auto px-4 py-16 flex flex-col gap-10 relative z-10">
+        
+        <!-- Header Section with Fragment Animation -->
+        <header class="text-center space-y-5">
+            <div data-reveal class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-mono tracking-wide shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                RAG Schema Pruner &bull; LangGraph Multi-Agent
+            </div>
+
+            <h1 data-fragment class="text-4xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-sm">
+                Autonomous DB Intelligence
+            </h1>
+
+            <p data-reveal class="text-slate-400 max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
+                Natural-language SQL compilation powered by <span class="text-slate-200 font-medium">ChromaDB Schema Pruning</span>, <span class="text-slate-200 font-medium">GPT-OSS-120B</span>, and zero-trust AST execution guards.
+            </p>
+
+            <!-- Tech Badges -->
+            <div data-reveal class="flex flex-wrap justify-center gap-2.5 pt-2">
+                <span class="text-xs px-3 py-1 rounded-md bg-white/[0.03] border border-white/10 text-slate-400 font-mono">Model: openai/gpt-oss-120b</span>
+                <span class="text-xs px-3 py-1 rounded-md bg-white/[0.03] border border-white/10 text-slate-400 font-mono">Vector: ChromaDB + FastEmbed</span>
+                <span class="text-xs px-3 py-1 rounded-md bg-white/[0.03] border border-white/10 text-slate-400 font-mono">Self-Healing Critic: &le; 3 Retries</span>
+            </div>
+        </header>
+
+        <!-- Control Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+            
+            <!-- Left Column: BYOD Upload Zone -->
+            <div data-reveal class="md:col-span-1 glass-panel rounded-2xl p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-cyan-500/30 transition-all duration-300">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                        <h2 class="text-xs font-semibold text-slate-300 uppercase tracking-widest">Active Schema</h2>
+                    </div>
+                    <span class="text-[10px] font-mono text-cyan-400/80 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">Vector Index</span>
+                </div>
+                
+                <input type="file" id="db-file" class="hidden" accept=".db,.sqlite,.sqlite3">
+                
+                <div id="upload-zone" class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center cursor-pointer transition-all duration-300 hover:bg-white/[0.04] hover:border-cyan-400/40 flex flex-col items-center justify-center gap-2">
+                    <div class="w-12 h-12 rounded-xl bg-white/[0.03] flex items-center justify-center border border-white/10 text-slate-400 group-hover:text-cyan-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-200 font-medium">Drop SQLite database</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Supports .db, .sqlite (Max 50MB)</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between bg-black/30 px-3 py-2 rounded-lg border border-white/5">
+                    <p id="upload-status" class="text-xs text-slate-400 font-mono truncate">Ready for upload.</p>
+                </div>
+            </div>
+
+            <!-- Right Column: Query & Execution Input -->
+            <div data-reveal class="md:col-span-2 glass-panel rounded-2xl p-6 flex flex-col justify-between gap-6 hover:border-cyan-500/20 transition-all duration-300">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="question-input" class="text-xs font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            Natural Language Query
+                        </label>
+                        <span class="text-[11px] text-slate-500 font-mono">Zero-shot / Vector Pruned</span>
+                    </div>
+
+                    <form id="question-form" class="relative w-full">
+                        <input 
+                            type="text" 
+                            id="question-input" 
+                            placeholder="e.g., Show top 5 customers with their total purchase amounts..." 
+                            class="w-full bg-black/50 border border-white/10 rounded-xl py-4 pl-4 pr-14 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all text-sm shadow-inner"
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="absolute right-2.5 top-1/2 -translate-y-1/2 p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-all disabled:opacity-40">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Status & Rolling Orb Track -->
+                <div class="flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-32 h-1 bg-white/5 rounded-full relative overflow-hidden border border-white/5">
+                            <!-- Rolling Orb -->
+                            <div id="orb" class="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-cyan-400 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)] -left-4"></div>
+                        </div>
+                        <p id="status" class="text-xs font-mono text-slate-400">Pipeline ready.</p>
+                    </div>
+
+                    <!-- Pipeline Mini-Badge Flow -->
+                    <div class="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
+                        <span class="px-2 py-0.5 rounded bg-white/[0.02] border border-white/5">Prune</span>
+                        <span>&rarr;</span>
+                        <span class="px-2 py-0.5 rounded bg-white/[0.02] border border-white/5">Generate</span>
+                        <span>&rarr;</span>
+                        <span class="px-2 py-0.5 rounded bg-white/[0.02] border border-white/5">Guard</span>
+                        <span>&rarr;</span>
+                        <span class="px-2 py-0.5 rounded bg-white/[0.02] border border-white/5">Critic</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Error Box -->
+        <div id="error-box" class="hidden glass-panel border-rose-500/40 bg-rose-950/20 text-rose-200 p-4 rounded-xl text-xs font-mono shadow-[0_0_20px_rgba(244,63,94,0.15)] flex items-start gap-3">
+            <svg class="w-4 h-4 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div id="error-content" class="flex-1"></div>
+        </div>
+
+        <!-- Results Panel -->
+        <div id="results" class="hidden glass-panel-elevated rounded-2xl p-6 md:p-8 flex flex-col gap-6" data-reveal>
+            
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-bold text-white tracking-wide">Autonomous Pipeline Output</h3>
+                    <p class="text-xs text-slate-400 font-mono">Verified Execution & AST Compliance</p>
+                </div>
+                
+                <div class="flex items-center gap-3 text-xs font-mono">
+                    <span class="bg-cyan-500/10 text-cyan-300 px-3.5 py-1.5 rounded-full border border-cyan-500/30 shadow-[0_0_12px_rgba(34,211,238,0.15)]">
+                        Rows: <span id="row-count" class="font-semibold text-white">0</span>
+                    </span>
+                    <span class="bg-purple-500/10 text-purple-300 px-3.5 py-1.5 rounded-full border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]">
+                        Critic Retries: <span id="retries" class="font-semibold text-white">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Generated SQL Code Block with Copy Action -->
+            <div class="relative bg-black/70 rounded-xl p-4 border border-white/10 shadow-inner group">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-2 border-b border-white/5 pb-2">
+                    <span class="text-cyan-400/90">&bull; Compiled SQLite Query</span>
+                    <button id="copy-sql-btn" type="button" class="text-slate-500 hover:text-slate-200 transition-colors flex items-center gap-1.5 text-[10px]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        <span id="copy-text">Copy</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <pre class="text-xs font-mono text-emerald-400 leading-relaxed"><code id="sql-output">-- SQL will appear here</code></pre>
+                </div>
+            </div>
+
+            <!-- Conditional Analytics Chart -->
+            <div id="chart-container" class="hidden w-full bg-black/40 border border-white/10 rounded-xl p-4 mb-6 shadow-inner">
+                <div class="flex items-center gap-2 mb-4 px-2">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <span class="text-xs font-mono text-slate-300 uppercase tracking-wider">Statistical Analysis</span>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="analytics-chart"></canvas>
+                </div>
+            </div>
+        
+            <!-- Dynamic Table Container -->
+            <div id="table-wrap" class="w-full"></div>
+            
+        </div>
+    </main>
+
+    <!-- Connect the elevated logic -->
+    <script src="script.js?v=final"></script>
+</body>
+</html>
